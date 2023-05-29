@@ -70,10 +70,26 @@ const getRandomIP = () => {
   return randomIP;
 };
 
-const home = async () => {
-  const res = await fetch('https://raw.githubusercontent.com/adams549659584/go-proxy-bingai/master/cloudflare/index.html');
+/**
+ * home
+ * @param {string} pathname
+ * @returns
+ */
+const home = async (pathname) => {
+  const baseUrl = 'https://raw.githubusercontent.com/adams549659584/go-proxy-bingai/master/';
+  let url;
+  // if (pathname.startsWith('/github/')) {
+  if (pathname.indexOf('/github/') === 0) {
+    url = pathname.replace('/github/', 'https://raw.githubusercontent.com/adams549659584/go-proxy-bingai/master/');
+  } else {
+    url = baseUrl + 'cloudflare/index.html';
+  }
+  const res = await fetch(url);
   const newRes = new Response(res.body, res);
-  newRes.headers.set('content-type', 'text/html; charset=utf-8');
+  if (pathname === '/') {
+    newRes.headers.delete('content-security-policy');
+    newRes.headers.set('content-type', 'text/html; charset=utf-8');
+  }
   return newRes;
 };
 
@@ -87,8 +103,9 @@ export default {
    */
   async fetch(request, env, ctx) {
     const currentUrl = new URL(request.url);
-    if (currentUrl.pathname === '/') {
-      return home();
+    // if (currentUrl.pathname === '/' || currentUrl.pathname.startsWith('/github/')) {
+    if (currentUrl.pathname === '/' || currentUrl.pathname.indexOf('/github/') === 0) {
+      return home(currentUrl.pathname);
     }
     const targetUrl = new URL(SYDNEY_ORIGIN + currentUrl.pathname + currentUrl.search);
 
